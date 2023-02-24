@@ -28,9 +28,6 @@ class bikesim:
         self.initial_speed = 5
         self.pedalling = False
 
-        # parameters that are fun:
-        # speed 5, normal steering noise * 0.5
-
     def reset(self):
         leaning_noise = (np.random.normal(0, 0.5)) * 0.
         p.resetBasePositionAndOrientation(bodyUniqueId=self.bike, 
@@ -39,7 +36,6 @@ class bikesim:
                                               np.pi/2 + leaning_noise, 0, 0]))
 
         p.resetBaseVelocity(self.bike,[self.initial_speed,0,0],[0,0,0])
-        #p.resetBaseVelocity(self.bike,[0,0,0],[0,0,0])
 
         steering_noise = (np.random.normal(0, 0.5)) * 0.
         p.resetJointState(self.bike,0,np.pi*2 + steering_noise)
@@ -136,21 +132,9 @@ class bikesim:
 
         tmp = p.getMatrixFromQuaternion(orientation)
         mat = np.array(tmp).reshape((3, 3))
-        #z = mat[:, 1]
-        #y = mat[:, 2]
-        #l = -np.arccos(z[2]) * np.sign(z[1])
-        #l2 = np.arctan2(z[0], z[2])
-        #print("A", y, z)
-        #print('leaning:', leaning)
-        #print('l', l)
-        #print('diff', leaning - l)
 
         x = mat[:, 0]
         leaning_dot = np.dot(x, np.array([ang_vel[0], ang_vel[1], 0]))
-
-        #leaning = l2
-        #leaning = l
-        #leaning_dot = tmp[2]
 
         observation = (pos[0], pos[1], pos[2], heading, heading_dot, leaning, leaning_dot)
         return observation
@@ -249,8 +233,6 @@ def angle_diff(a1, a2):
 def nn_controller(observation, desired_heading=-1, parameters=None):
     x, y, z, heading, heading_dot, leaning, leaning_dot = observation
 
-    #print(x, y, heading, desired_heading, leaning)
-
     if parameters is None:
         c1 = -1
         c2 = 100
@@ -263,8 +245,6 @@ def nn_controller(observation, desired_heading=-1, parameters=None):
     heading_diff = angle_diff(desired_heading, heading)
     desired_lean = c1 * (heading_diff)
     desired_lean = 1 / (1 + np.exp(-desired_lean)) - 0.5
-    #print(heading_diff)
-    #print(desired_lean)
 
     torque = c2 * (desired_lean - leaning) - c3 * leaning_dot
 
@@ -279,7 +259,6 @@ def tune_nn_controller():
     for _ in range(10000):
         parameters = np.random.uniform(low=0, high=100, size=3)
         parameters[0] = parameters[0] * -1 / 20
-        #r_circle = 0
         r_circle, _ = run_controller_to_follow_path(sim, get_circle_path(), parameters)
         r_square, _ = run_controller_to_follow_path(sim, get_square_path(), parameters)
 
@@ -290,7 +269,6 @@ def tune_nn_controller():
             best_reward = r
 
             print(r, best_param)
-            # [-1.31260262 74.37263583 72.50420101]
 
 def rl_controller():
     pass
